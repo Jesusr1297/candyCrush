@@ -13,8 +13,8 @@ const candyColors = [
 
 const App = (effect, deps) => {
     const [currentColorArrangement, setCurrentColorArrangement] = useState([])
-    const [SquareBeingDragged, setSquareBeingDragged] = useState(null)
-    const [SquareBeingReplaced, setSquareBeingReplaced] = useState(null)
+    const [squareBeingDragged, setSquareBeingDragged] = useState(null)
+    const [squareBeingReplaced, setSquareBeingReplaced] = useState(null)
 
     const checkForColumnOfFour = () => {
         for (let i = 0; i <= 39; i++) {
@@ -22,6 +22,7 @@ const App = (effect, deps) => {
             const decidedColor = currentColorArrangement[i]
             if (columnOfFour.every(square => currentColorArrangement[square] === decidedColor)) {
                 columnOfFour.forEach(square => currentColorArrangement[square] = '')
+                return true
             }
         }
     }
@@ -35,6 +36,7 @@ const App = (effect, deps) => {
             if (notValid.includes(i)) continue
             if (rowOfFour.every(square => currentColorArrangement[square] === decidedColor)) {
                 rowOfFour.forEach(square => currentColorArrangement[square] = '')
+                return true
             }
         }
     }
@@ -45,6 +47,7 @@ const App = (effect, deps) => {
             const decidedColor = currentColorArrangement[i]
             if (columnOfThree.every(square => currentColorArrangement[square] === decidedColor)) {
                 columnOfThree.forEach(square => currentColorArrangement[square] = '')
+                return true
             }
         }
     }
@@ -58,6 +61,7 @@ const App = (effect, deps) => {
             if (notValid.includes(i)) continue
             if (rowOfThree.every(square => currentColorArrangement[square] === decidedColor)) {
                 rowOfThree.forEach(square => currentColorArrangement[square] = '')
+                return true
             }
         }
     }
@@ -92,9 +96,39 @@ const App = (effect, deps) => {
         setSquareBeingReplaced(e.target)
     }
 
-    const dragEnd = (e) => {
-        console.log(e.target)
+    const dragEnd = () => {
         console.log('drag end')
+
+        const squareBeingDraggedId = parseInt(squareBeingDragged.getAttribute('data-id'))
+        const squareBeingReplacedId = parseInt(squareBeingReplaced.getAttribute('data-id'))
+
+        console.log('square being dragged id', squareBeingDraggedId)
+        console.log('square being replaced id', squareBeingReplacedId)
+
+        currentColorArrangement[squareBeingReplacedId] = squareBeingDragged.style.backgroundColor
+        currentColorArrangement[squareBeingDraggedId] = squareBeingReplaced.style.backgroundColor
+
+        const validMoves = [
+            squareBeingDraggedId - 1,
+            squareBeingDraggedId + 1,
+            squareBeingDraggedId - width,
+            squareBeingDraggedId + width
+        ]
+        const validMove = validMoves.includes(squareBeingReplacedId)
+
+        const isAColumnOfFour = checkForColumnOfFour()
+        const isARowOfFour = checkForRowOfFour()
+        const isARowOfThree = checkForRowOfThree()
+        const isAColumnOfThree = checkForColumnOfThree()
+
+        if (squareBeingReplacedId && validMove && (isARowOfThree || isARowOfFour || isAColumnOfThree || isAColumnOfFour)) {
+            setSquareBeingDragged(null)
+            setSquareBeingReplaced(null)
+        }else {
+            currentColorArrangement[squareBeingReplacedId] = squareBeingReplaced.style.backgroundColor
+            currentColorArrangement[squareBeingDraggedId] = squareBeingDragged.style.backgroundColor
+            setCurrentColorArrangement([...currentColorArrangement])
+        }
     }
     const createBoard = () => {
         const randomColorArrangement = []
@@ -130,7 +164,7 @@ const App = (effect, deps) => {
                             key={index}
                             style={{backgroundColor: candyColor}}
                             alt={candyColor}
-                            data-i={index}
+                            data-id={index}
                             draggable={true}
                             onDragStart={dragStart}
                             onDragOver={(e) => e.preventDefault()}
